@@ -1,11 +1,13 @@
 package com.ketabs.model
 
 import com.ketabs.ObjectMother
+import com.ketabs.model.valueobject.ID
+import com.ketabs.model.valueobject.Role
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
-import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
 
 internal class ElementTest {
 
@@ -13,11 +15,14 @@ internal class ElementTest {
     fun `create collection must return the expected values`() {
         val name = ObjectMother.randomName()
         val description = ObjectMother.randomDescription()
+        val creatorID = ObjectMother.randomID()
 
-        val collection = Element.Collection.create(name, description)
+        val collection = Element.Collection.create(creatorID, name, description)
 
         assertEquals(name, collection.name)
         assertEquals(description, collection.description)
+        assertEquals(creatorID, collection.owners[0].userID)
+        assertEquals(Role.ADMIN, collection.owners[0].role)
     }
 
     @Test
@@ -38,12 +43,15 @@ internal class ElementTest {
         val name = ObjectMother.randomName()
         val description = ObjectMother.randomDescription()
         val link = ObjectMother.randomLink()
+        val creatorID = ObjectMother.randomID()
 
-        val collection = Element.Tab.create(name, description, link)
+        val collection = Element.Tab.create(creatorID, name, description, link)
 
         assertEquals(name, collection.name)
         assertEquals(description, collection.description)
         assertEquals(link, collection.link)
+        assertEquals(creatorID, collection.owners[0].userID)
+        assertEquals(Role.ADMIN, collection.owners[0].role)
     }
 
     @Test

@@ -11,8 +11,8 @@ internal class FullNameTest {
 
     @TestFactory
     fun `constructor must prevent invalid value`() = listOf(
-        "" to FullName.InvalidFullName.TooShort(),
-        "Mark" to FullName.InvalidFullName.TooShort(),
+        "" to FullName.InvalidFullName.TooShort,
+        "Mark" to FullName.InvalidFullName.TooShort,
     ).map { (input, expected) ->
         DynamicTest.dynamicTest("when I try creating a full name as `$input` then I expect an error `$expected`") {
             FullName.of(input).shouldBeLeft(expected)
@@ -25,7 +25,7 @@ internal class FullNameTest {
         "Mr. Luke Skywalker",
     ).map {
         DynamicTest.dynamicTest("when I create a full name as `$it` then it must be equal to itself as string") {
-            assertSame(it, FullName.of(it).shouldBeRight().toString())
+            assertSame(it, FullName.of(it).shouldBeRight().value)
         }
     }
 
@@ -45,7 +45,7 @@ internal class FullNameTest {
         ) to false,
     ).map {
         DynamicTest.dynamicTest("when the first full name is `${it.first[0]}` and the second one is `${it.first[1]}` then I expect isEqual to return `${it.second}`") {
-            assertSame(it.second, it.first[0].bind().isEqual(it.first[1].bind()))
+            assertSame(it.second, it.first[0].bind() == it.first[1].bind())
         }
     }
 }

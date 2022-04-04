@@ -4,7 +4,7 @@ import arrow.core.Either
 import org.mindrot.jbcrypt.BCrypt
 
 sealed class Password private constructor() {
-    abstract val s: String
+    abstract val value: String
 
     sealed class InvalidPassword(private val msg: String) : IllegalArgumentException(msg) {
         companion object {
@@ -13,8 +13,8 @@ sealed class Password private constructor() {
                 "Password must contains at least one number, one alphabetical uppercase char, and one special char"
         }
 
-        class TooShort : InvalidPassword(TOO_SHORT)
-        class TooSimple : InvalidPassword(TOO_SIMPLE)
+        object TooShort : InvalidPassword(TOO_SHORT)
+        object TooSimple : InvalidPassword(TOO_SIMPLE)
 
         override fun toString() = msg
     }
@@ -26,29 +26,28 @@ sealed class Password private constructor() {
         internal fun String.isComplex(): Boolean = FORMAT_REGEX.matches(this)
     }
 
-    data class EncryptedPassword internal constructor(override val s: String) : Password() {
+    data class EncryptedPassword internal constructor(override val value: String) : Password() {
         companion object {
             fun of(s: String): Either<InvalidPassword, EncryptedPassword> = when {
-                s.length < 7 -> Either.Left(InvalidPassword.TooShort())
-                !s.isComplex() -> Either.Left(InvalidPassword.TooSimple())
+                s.length < 7 -> Either.Left(InvalidPassword.TooShort)
+                !s.isComplex() -> Either.Left(InvalidPassword.TooSimple)
                 else -> Either.Right(EncryptedPassword(BCrypt.hashpw(s, BCrypt.gensalt())))
             }
         }
 
-        override fun toString() = s
+        override fun toString() = value
 
-        fun matches(p: PlainPassword) = BCrypt.checkpw(p.toString(), this.s)
+        fun matches(p: PlainPassword) = BCrypt.checkpw(p.value, this.value)
     }
 
-    data class PlainPassword internal constructor(override val s: String) : Password() {
+    data class PlainPassword internal constructor(override val value: String) : Password() {
         companion object {
             fun of(s: String): Either<InvalidPassword, PlainPassword> = when {
-                s.length < 7 -> Either.Left(InvalidPassword.TooShort())
-                !s.isComplex() -> Either.Left(InvalidPassword.TooSimple())
+                s.length < 7 -> Either.Left(InvalidPassword.TooShort)
+                !s.isComplex() -> Either.Left(InvalidPassword.TooSimple)
                 else -> Either.Right(PlainPassword(s))
             }
         }
 
-        override fun toString() = s
     }
 }

@@ -11,8 +11,8 @@ internal class LinkTest {
 
     @TestFactory
     fun `constructor must prevent invalid value`() = listOf(
-        "http:" to Link.InvalidLink.InvalidFormat(),
-        "ttps://stackoverflow.com/ques" to Link.InvalidLink.InvalidFormat(),
+        "http:" to Link.InvalidLink.InvalidFormat,
+        "ttps://stackoverflow.com/ques" to Link.InvalidLink.InvalidFormat,
     ).map { (input, expected) ->
         DynamicTest.dynamicTest("when I try creating a link as `$input` then I expect an error `$expected`") {
             Link.of(input).shouldBeLeft(expected)
@@ -26,7 +26,7 @@ internal class LinkTest {
         "https://ketabs.io/elements/1",
     ).map {
         DynamicTest.dynamicTest("when I create a link as `$it` then it must be equal to itself as string") {
-            assertSame(it, Link.of(it).shouldBeRight().toString())
+            assertSame(it, Link.of(it).shouldBeRight().value)
         }
     }
 
@@ -37,7 +37,7 @@ internal class LinkTest {
         listOf(Link.of("https://ketabs.io/elements/2"), Link.of("https://ketabs.io/elements/1")) to false,
     ).map {
         DynamicTest.dynamicTest("when the first link is `${it.first[0]}` and the second one is `${it.first[1]}` then I expect isEqual to return `${it.second}`") {
-            assertSame(it.second, it.first[0].bind().isEqual(it.first[1].bind()))
+            assertSame(it.second, it.first[0].bind() == it.first[1].bind())
         }
     }
 }

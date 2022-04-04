@@ -12,8 +12,8 @@ data class LoginAuthData(val email: Email, val plainPassword: Password.PlainPass
 typealias LoginAuth = suspend (LoginAuthData) -> Either<LoginAuthError, User>
 
 sealed class LoginAuthError(val msg: String) {
-    class UserNotFound : LoginAuthError("User was not authorized")
-    class ReadError : LoginAuthError("User was not read due to an error")
+    object UserNotFound : LoginAuthError("User was not authorized")
+    object ReadError : LoginAuthError("User was not read due to an error")
 }
 
 fun makeLoginAuth(repo: UserRepository): LoginAuth {
@@ -22,13 +22,13 @@ fun makeLoginAuth(repo: UserRepository): LoginAuth {
             when (it) {
                 is Either.Right -> when (it.value.password.matches(data.plainPassword)) {
                     true -> return@let Either.Right(it.value)
-                    false -> return@let Either.Left(LoginAuthError.UserNotFound())
+                    false -> return@let Either.Left(LoginAuthError.UserNotFound)
                 }
                 is Either.Left -> it.value
             }.let {
                 when (it) {
-                    is UserRepoReadError.InvalidReadUser -> Either.Left(LoginAuthError.ReadError())
-                    is UserRepoReadError.UserNotFound -> Either.Left(LoginAuthError.UserNotFound())
+                    is UserRepoReadError.InvalidReadUser -> Either.Left(LoginAuthError.ReadError)
+                    is UserRepoReadError.UserNotFound -> Either.Left(LoginAuthError.UserNotFound)
                 }
             }
         }

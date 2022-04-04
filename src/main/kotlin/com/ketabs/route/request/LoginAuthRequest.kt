@@ -10,7 +10,7 @@ data class LoginAuthRequest(
     @kotlinx.serialization.SerialName("password") val plainPassword: String =  "",
 ) {
     fun parse() = parse(
-        Pair("email", Email.of(email)),
-        Pair("password", Password.PlainPassword.of(plainPassword)),
+        "email" to Email.of(email),
+        "password" to Password.PlainPassword.of(plainPassword),
     ) { email, plainPassword -> LoginAuthData(email, plainPassword) }
 }

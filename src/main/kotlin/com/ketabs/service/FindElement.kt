@@ -11,21 +11,21 @@ data class FindElementData(val id: ID)
 typealias FindElement = suspend (FindElementData) -> Either<FindElementError, Element>
 
 sealed class FindElementError(val msg: String) {
-    class ElementNotFound : FindElementError("Element was not found")
-    class ReadError : FindElementError("Element was not read due to an error")
+    object ElementNotFound : FindElementError("Element was not found")
+    object ReadError : FindElementError("Element was not read due to an error")
 }
 
 fun makeFindElement(repo: ElementRepository): FindElement {
     return { data: FindElementData ->
-        repo.getBydID(data.id)
+        repo.getByID(data.id)
             .let {
                 when (it) {
                     is Either.Right -> return@let Either.Right(it.value)
                     is Either.Left -> it.value
                 }.let {
                     when (it) {
-                        is ElementRepoReadError.InvalidReadElement -> Either.Left(FindElementError.ReadError())
-                        is ElementRepoReadError.ElementNotFound -> Either.Left(FindElementError.ElementNotFound())
+                        is ElementRepoReadError.InvalidReadElement -> Either.Left(FindElementError.ReadError)
+                        is ElementRepoReadError.ElementNotFound -> Either.Left(FindElementError.ElementNotFound)
                     }
                 }
             }

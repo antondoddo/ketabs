@@ -16,7 +16,7 @@ data class RegisterAuthData(val email: Email, val fullName: FullName, val passwo
 typealias RegisterAuth = suspend (RegisterAuthData) -> Either<RegisterAuthError, User>
 
 sealed class RegisterAuthError(val msg: String) {
-    class WriteError : RegisterAuthError("User was not written due to an error")
+    object WriteError : RegisterAuthError("User was not written due to an error")
 }
 
 fun makeRegisterAuth(repo: UserRepository): RegisterAuth {
@@ -24,7 +24,7 @@ fun makeRegisterAuth(repo: UserRepository): RegisterAuth {
         when (option) {
             is None -> Either.Right(user)
             is Some -> when (option.value) {
-                is UserRepoWriteError.InvalidWriteUser -> Either.Left(RegisterAuthError.WriteError())
+                is UserRepoWriteError.InvalidWriteUser -> Either.Left(RegisterAuthError.WriteError)
             }
         }
     }

@@ -1,4 +1,0 @@
-[90m/Users/damianopetrungaro/IdeaProjects/ketabs/src/main/kotlin/com/ketabs/[0mApplication.kt[90m:[0m3[90m:1:[0m Wildcard import
-[90m/Users/damianopetrungaro/IdeaProjects/ketabs/src/main/kotlin/com/ketabs/[0mApplication.kt[90m:[0m4[90m:1:[0m Wildcard import
-[90m/Users/damianopetrungaro/IdeaProjects/ketabs/src/main/kotlin/com/ketabs/[0mApplication.kt[90m:[0m5[90m:1:[0m Wildcard import
-[90m/Users/damianopetrungaro/IdeaProjects/ketabs/src/main/kotlin/com/ketabs/model/[0mElement.kt[90m:[0m6[90m:1:[0m Wildcard import

@@ -12,8 +12,8 @@ internal class IDTest {
 
     @TestFactory
     fun `constructor must prevent invalid value`() = listOf(
-        "" to ID.InvalidID.InvalidFormat(),
-        "36295794-4a9a-4263-ae0423eab1de656" to ID.InvalidID.InvalidFormat(),
+        "" to ID.InvalidID.InvalidFormat,
+        "36295794-4a9a-4263-ae0423eab1de656" to ID.InvalidID.InvalidFormat,
     ).map { (input, expected) ->
         DynamicTest.dynamicTest("when I try creating a id as `$input` then I expect an error `$expected`") {
             ID.of(input).shouldBeLeft(expected)
@@ -27,7 +27,7 @@ internal class IDTest {
         "36295794-4a9a-4263-ae04-23eab1de6564",
     ).map {
         DynamicTest.dynamicTest("when I create a id as `$it` then it must be equal to itself as string") {
-            assertSame(it, ID.of(it).shouldBeRight().toString())
+            assertSame(it, ID.of(it).shouldBeRight().value)
         }
     }
 
@@ -47,7 +47,7 @@ internal class IDTest {
         ) to false,
     ).map {
         DynamicTest.dynamicTest("when the first id is `${it.first[0]}` and the second one is `${it.first[1]}` then I expect isEqual to return `${it.second}`") {
-            assertSame(it.second, it.first[0].bind().isEqual(it.first[1].bind()))
+            assertSame(it.second, it.first[0].bind() == it.first[1].bind())
         }
     }
 

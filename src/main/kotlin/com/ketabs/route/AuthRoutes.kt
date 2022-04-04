@@ -17,6 +17,7 @@ import io.ktor.response.respond
 import io.ktor.routing.Route
 import io.ktor.routing.post
 import java.util.Date
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 
 fun Route.auth(
@@ -50,7 +51,7 @@ fun Route.auth(
             }
         }.let {
             when (it) {
-                is LoginAuthError.UserNotFound -> return@post call.respond(HttpStatusCode.NotFound)
+                is LoginAuthError.UserNotFound -> return@post call.respond(HttpStatusCode.Unauthorized)
                 is LoginAuthError.ReadError -> return@post call.respond(HttpStatusCode.InternalServerError)
             }
         }
@@ -72,7 +73,7 @@ fun Route.auth(
             }
         }.let {
             when (val result = registerAuth(it)) {
-                is Either.Right -> return@post call.respond(HttpStatusCode.OK, result.value.toResponse())
+                is Either.Right -> return@post call.respond(HttpStatusCode.Created, result.value.toResponse())
                 is Either.Left -> result.value
             }
         }.let {
@@ -98,9 +99,9 @@ private fun generateJWT(
     "token" to JWT.create()
         .withAudience(audience)
         .withIssuer(issuer)
-        .withClaim("id", user.id.toString())
-        .withClaim("email", user.email.toString())
-        .withClaim("full_name", user.fullName.toString())
+        .withClaim("id", user.id.value)
+        .withClaim("email", user.email.value)
+        .withClaim("full_name", user.fullName.value)
         .withExpiresAt(Date(System.currentTimeMillis() + 60000))
         .sign(Algorithm.HMAC256(secret))
 )

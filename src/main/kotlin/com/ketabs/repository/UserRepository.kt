@@ -10,25 +10,41 @@ import java.util.concurrent.ConcurrentHashMap
 
 
 sealed class UserRepoWriteError(val msg: String) {
-    class InvalidWriteUser : UserRepoWriteError("User was not written due to an error")
+    object InvalidWriteUser : UserRepoWriteError("User was not written due to an error")
 }
 
-sealed class UserRepoReadError(val msg: String) {
-    class UserNotFound : UserRepoReadError("User was not found")
-    class InvalidReadUser : UserRepoReadError("User was not read due to an error")
+sealed class UserRepoReadError(val msg: String) : Exception() {
+    object UserNotFound : UserRepoReadError("User was not found")
+    object InvalidReadUser : UserRepoReadError("User was not read due to an error")
 }
 
 interface UserRepository {
+    suspend fun getByID(id: ID): Either<UserRepoReadError, User>
     suspend fun getByEmail(email: Email): Either<UserRepoReadError, User>
     suspend fun add(add: User): Option<UserRepoWriteError>
 }
 
 class InMemoryUserRepository() : UserRepository {
-    private val store: MutableMap<ID, User> = ConcurrentHashMap()
+    private var store = ConcurrentHashMap<ID, User>()
+
+    companion object {
+        fun withStore(store: ConcurrentHashMap<ID, User>): InMemoryUserRepository {
+            val repo = InMemoryUserRepository()
+            repo.store = store
+            return repo
+        }
+    }
+
+    override suspend fun getByID(id: ID): Either<UserRepoReadError, User> {
+        return when (val user = store.asSequence().filter { it.value.id == id }.firstOrNull()) {
+            null -> Either.Left(UserRepoReadError.UserNotFound)
+            else -> Either.Right(user.value)
+        }
+    }
 
     override suspend fun getByEmail(email: Email): Either<UserRepoReadError, User> {
-        return when (val user = store.asSequence().filter { it.value.email.isEqual(email) }.firstOrNull()) {
-            null -> Either.Left(UserRepoReadError.UserNotFound())
+        return when (val user = store.asSequence().filter { it.value.email == email }.firstOrNull()) {
+            null -> Either.Left(UserRepoReadError.UserNotFound)
             else -> Either.Right(user.value)
         }
     }

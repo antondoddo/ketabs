@@ -29,6 +29,8 @@ dependencies {
     testImplementation("io.github.serpro69:kotlin-faker:1.10.0")
     testImplementation("io.kotest:kotest-runner-junit5:5.2.1")
     testImplementation("io.kotest.extensions:kotest-assertions-arrow:1.2.3")
+    testImplementation("org.jetbrains.kotlin:kotlin-test:1.6.8")
+    testImplementation("io.ktor:ktor-server-test-host:1.6.8")
 }
 
 tasks.test {

@@ -1,6 +1,7 @@
 package com.ketabs.route.request
 
 import com.ketabs.model.valueobject.Description
+import com.ketabs.model.valueobject.ID
 import com.ketabs.model.valueobject.Link
 import com.ketabs.model.valueobject.Name
 import com.ketabs.service.CreateElementData
@@ -11,17 +12,17 @@ data class CreateElementRequest(
     val description: String = "",
     val link: String? = null,
 ) {
-    fun parse() = when {
+    fun parse(id: ID) = when {
         !link.isNullOrBlank() ->
             parse(
-                Pair("name", Name.of(name)),
-                Pair("description", Description.of(description)),
-                Pair("link", Link.of(link)),
-            ) { name, description, link -> CreateElementData.CreateTabData(name, description, link) }
+                "name" to Name.of(name),
+                "description" to Description.of(description),
+                "link" to Link.of(link),
+            ) { name, description, link -> CreateElementData.CreateTabData(name, description, id, link) }
         else ->
             parse(
-                Pair("name", Name.of(name)),
-                Pair("description", Description.of(description)),
-            ) { name, description -> CreateElementData.CreateCollectionData(name, description) }
+                "name" to Name.of(name),
+                "description" to Description.of(description),
+            ) { name, description -> CreateElementData.CreateCollectionData(name, description, id) }
     }
 }

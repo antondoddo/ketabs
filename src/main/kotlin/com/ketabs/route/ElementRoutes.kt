@@ -2,6 +2,7 @@ package com.ketabs.route
 
 import arrow.core.Either
 import com.ketabs.model.Element
+import com.ketabs.model.valueobject.ID
 import com.ketabs.route.request.CreateElementRequest
 import com.ketabs.route.request.CreateElementWithParentRequest
 import com.ketabs.route.request.FindElementRequest
@@ -12,6 +13,8 @@ import com.ketabs.service.CreateElementWithParentError
 import com.ketabs.service.FindElement
 import com.ketabs.service.FindElementError
 import io.ktor.application.call
+import io.ktor.auth.jwt.JWTPrincipal
+import io.ktor.auth.principal
 import io.ktor.http.HttpStatusCode
 import io.ktor.request.receive
 import io.ktor.response.respond
@@ -37,7 +40,13 @@ fun Route.elements(
                 }
             }
         }.let {
-            when (val parsed = it.parse()) {
+            val principal = call.principal<JWTPrincipal>()
+            when (val userID = ID.of(principal?.payload?.getClaim("id")?.asString() ?: "")) {
+                is Either.Left -> return@post call.response.status(HttpStatusCode.Unauthorized)
+                is Either.Right -> Pair(it, userID.value)
+            }
+        }.let {
+            when (val parsed = it.first.parse(it.second)) {
                 is Either.Right -> parsed.value
                 is Either.Left -> return@post call.respond(
                     HttpStatusCode.UnprocessableEntity,
@@ -74,7 +83,13 @@ fun Route.elements(
                 else -> return@post call.respond(HttpStatusCode.NotFound)
             }
         }.let {
-            when (val parsed = it.parse()) {
+            val principal = call.principal<JWTPrincipal>()
+            when (val userID = ID.of(principal?.payload?.getClaim("id")?.asString() ?: "")) {
+                is Either.Left -> return@post call.response.status(HttpStatusCode.Unauthorized)
+                is Either.Right -> Pair(it, userID.value)
+            }
+        }.let {
+            when (val parsed = it.first.parse(it.second)) {
                 is Either.Right -> parsed.value
                 is Either.Left -> when (parsed.value.containsKey("id")) {
                     false -> return@post call.respond(HttpStatusCode.UnprocessableEntity, parsed.value.toResponse())
@@ -88,6 +103,7 @@ fun Route.elements(
             }
         }.let {
             when (it) {
+                is CreateElementWithParentError.InvalidOwner -> return@post call.respond(HttpStatusCode.Unauthorized)
                 is CreateElementWithParentError.WriteError -> return@post call.respond(HttpStatusCode.InternalServerError)
                 is CreateElementWithParentError.ReadError -> return@post call.respond(HttpStatusCode.InternalServerError)
                 is CreateElementWithParentError.ElementNotFound -> return@post call.respond(HttpStatusCode.NotFound)
@@ -127,13 +143,13 @@ private fun <K, V> Map<K, V>.toResponse() = mapOf("errors" to this)
 
 private fun Element.toResponse(): Map<String, String?> {
     val data = mutableMapOf(
-        "id" to this.id.toString(),
-        "name" to this.name.toString(),
-        "description" to this.description.toString(),
+        "id" to this.id.value,
+        "name" to this.name.value,
+        "description" to this.description.value,
         "parent_id" to this.parent.let {
             when (it == null) {
                 true -> null
-                false -> it.id.toString()
+                false -> it.id.value
             }
         },
         "createdAt" to this.createdAt.toResponse(),

@@ -27,27 +27,29 @@ import kotlinx.serialization.json.Json
 
 fun main(args: Array<String>): Unit = io.ktor.server.netty.EngineMain.main(args)
 
-fun Application.module() {
-
-    val secret = environment.config.property("ktor.jwt.secret").getString()
-    val issuer = environment.config.property("ktor.jwt.issuer").getString()
-    val audience = environment.config.property("ktor.jwt.audience").getString()
-
+fun Application.module(
+    userRepo: UserRepository = userRepository(),
+    elementRepo: ElementRepository = elementRepository(),
+    jwtConfig: JWTConfig = JWTConfig(),
+) {
     install(IgnoreTrailingSlash)
     install(ContentNegotiation) {
         json(
-            Json { ignoreUnknownKeys = true }
+            Json {
+                encodeDefaults = true
+                ignoreUnknownKeys = true
+                isLenient = true
+            }
         )
     }
+
     install(Authentication) {
-        val myReal = environment.config.property("ktor.jwt.realm").getString()
         jwt("auth-jwt") {
-            realm = myReal
             verifier(
                 JWT
-                    .require(Algorithm.HMAC256(secret))
-                    .withAudience(audience)
-                    .withIssuer(issuer)
+                    .require(Algorithm.HMAC256(jwtConfig.secret))
+                    .withAudience(jwtConfig.audience)
+                    .withIssuer(jwtConfig.issuer)
                     .build()
             )
             validate { credential ->
@@ -59,12 +61,13 @@ fun Application.module() {
         }
     }
 
-    elementRoutes()
-    authRoutes(secret, issuer, audience)
+    elementRoutes(elementRepo)
+    authRoutes(userRepo, jwtConfig)
 }
 
-fun Application.elementRoutes() {
-    val repo: ElementRepository = InMemoryElementRepository()
+fun elementRepository(): ElementRepository = InMemoryElementRepository()
+
+fun Application.elementRoutes(repo: ElementRepository) {
     routing {
         authenticate("auth-jwt") {
             elements(
@@ -76,14 +79,30 @@ fun Application.elementRoutes() {
     }
 }
 
-fun Application.authRoutes(secret: String, issuer: String, audience: String) {
-    routing {
-        val repo: UserRepository = InMemoryUserRepository()
+fun userRepository(): UserRepository = InMemoryUserRepository()
 
+fun Application.authRoutes(
+    repo: UserRepository,
+    jwtConfig: JWTConfig
+) {
+    routing {
         auth(
             makeLoginAuth(repo),
             makeRegisterAuth(repo),
-            secret, issuer, audience
+            jwtConfig.secret,
+            jwtConfig.issuer,
+            jwtConfig.audience,
         )
     }
+}
+
+data class JWTConfig(val secret: String, val issuer: String, val audience: String, val realm: String)
+
+fun Application.JWTConfig(): JWTConfig {
+    return JWTConfig(
+        environment.config.property("ktor.jwt.secret").getString(),
+        environment.config.property("ktor.jwt.issuer").getString(),
+        environment.config.property("ktor.jwt.audience").getString(),
+        environment.config.property("ktor.jwt.realm").getString(),
+    )
 }

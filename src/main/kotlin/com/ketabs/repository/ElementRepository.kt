@@ -8,25 +8,25 @@ import com.ketabs.model.valueobject.ID
 import java.util.concurrent.ConcurrentHashMap
 
 sealed class ElementRepoWriteError(val msg: String) {
-    class InvalidWriteElement : ElementRepoWriteError("Element was not written due to an error")
+    object InvalidWriteElement : ElementRepoWriteError("Element was not written due to an error")
 }
 
 sealed class ElementRepoReadError(val msg: String) {
-    class ElementNotFound : ElementRepoReadError("Element was not found")
-    class InvalidReadElement : ElementRepoReadError("Element was not read due to an error")
+    object ElementNotFound : ElementRepoReadError("Element was not found")
+    object InvalidReadElement : ElementRepoReadError("Element was not read due to an error")
 }
 
 interface ElementRepository {
-    suspend fun getBydID(id: ID): Either<ElementRepoReadError, Element>
+    suspend fun getByID(id: ID): Either<ElementRepoReadError, Element>
     suspend fun add(element: Element): Option<ElementRepoWriteError>
 }
 
 class InMemoryElementRepository() : ElementRepository {
-    private val store: MutableMap<ID, Element> = ConcurrentHashMap()
+    private val store = ConcurrentHashMap<ID, Element>()
 
-    override suspend fun getBydID(id: ID): Either<ElementRepoReadError, Element> =
+    override suspend fun getByID(id: ID): Either<ElementRepoReadError, Element> =
         when (val element = store[id]) {
-            null -> Either.Left(ElementRepoReadError.ElementNotFound())
+            null -> Either.Left(ElementRepoReadError.ElementNotFound)
             else -> Either.Right(element)
         }
 

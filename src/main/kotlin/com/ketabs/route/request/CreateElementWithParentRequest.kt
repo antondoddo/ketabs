@@ -14,30 +14,32 @@ data class CreateElementWithParentRequest(
     val link: String? = null,
     var parentID: String = "",
 ) {
-    fun parse() = when {
+    fun parse(userID: ID) = when {
         !link.isNullOrBlank() ->
             parse(
-                Pair("name", Name.of(name)),
-                Pair("description", Description.of(description)),
-                Pair("link", Link.of(link)),
-                Pair("id", ID.of(parentID)),
+                "name" to  Name.of(name),
+                "description" to  Description.of(description),
+                "link" to  Link.of(link),
+                "id" to  ID.of(parentID),
             ) { name, description, link, parentID ->
                 CreateElementWithParentData.CreateTabData(
                     name,
                     description,
+                    userID,
                     link,
                     parentID
                 )
             }
         else ->
             parse(
-                Pair("name", Name.of(name)),
-                Pair("description", Description.of(description)),
-                Pair("id", ID.of(parentID)),
+                "name" to  Name.of(name),
+                "description" to  Description.of(description),
+                "id" to  ID.of(parentID),
             ) { name, description, parentID ->
                 CreateElementWithParentData.CreateCollectionData(
                     name,
                     description,
+                    userID,
                     parentID
                 )
             }

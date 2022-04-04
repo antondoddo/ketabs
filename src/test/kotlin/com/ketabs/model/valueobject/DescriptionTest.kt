@@ -11,7 +11,7 @@ internal class DescriptionTest {
 
     @TestFactory
     fun `constructor must prevent invalid value`() = listOf(
-        "Company website".repeat(100) to Description.InvalidDescription.TooLong(),
+        "Company website".repeat(100) to Description.InvalidDescription.TooLong,
     ).map { (input, expected) ->
         DynamicTest.dynamicTest("when I try creating a description as `$input` then I expect an error `$expected`") {
             Description.of(input).shouldBeLeft(expected)
@@ -25,7 +25,7 @@ internal class DescriptionTest {
         "PHP is dead . long live PHP!",
     ).map {
         DynamicTest.dynamicTest("when I create a description as `$it` then it must be equal to itself as string") {
-            assertSame(it, Description.of(it).shouldBeRight().toString())
+            assertSame(it, Description.of(it).shouldBeRight().value)
         }
     }
 
@@ -45,7 +45,7 @@ internal class DescriptionTest {
         ) to false,
     ).map {
         DynamicTest.dynamicTest("when the first description is `${it.first[0]}` and the second one is `${it.first[1]}` then I expect isEqual to return `${it.second}`") {
-            assertSame(it.second, it.first[0].bind().isEqual(it.first[1].bind()))
+            assertSame(it.second, it.first[0].bind() == (it.first[1].bind()))
         }
     }
 }

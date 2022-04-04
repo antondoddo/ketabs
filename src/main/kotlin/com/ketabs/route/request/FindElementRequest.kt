@@ -6,6 +6,6 @@ import com.ketabs.service.FindElementData
 @kotlinx.serialization.Serializable
 data class FindElementRequest(val id: String) {
     fun parse() = parse(
-        Pair("id", ID.of(id))
+        "id" to ID.of(id)
     ) { id -> FindElementData(id) }
 }
