@@ -16,9 +16,8 @@ import io.ktor.request.receive
 import io.ktor.response.respond
 import io.ktor.routing.Route
 import io.ktor.routing.post
-import java.util.Date
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
+import java.util.Date
 
 fun Route.auth(
     loginAuth: LoginAuth,
@@ -85,9 +84,9 @@ fun Route.auth(
 }
 
 private fun User.toResponse() = mapOf(
-    "id" to this.id.toString(),
-    "full_name" to this.fullName.toString(),
-    "email" to this.email.toString(),
+    "id" to this.id.value,
+    "full_name" to this.fullName.value,
+    "email" to this.email.value,
 )
 
 private fun generateJWT(

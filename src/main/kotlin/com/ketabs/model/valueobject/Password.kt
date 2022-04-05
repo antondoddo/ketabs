@@ -6,17 +6,12 @@ import org.mindrot.jbcrypt.BCrypt
 sealed class Password private constructor() {
     abstract val value: String
 
-    sealed class InvalidPassword(private val msg: String) : IllegalArgumentException(msg) {
-        companion object {
-            private const val TOO_SHORT = "Password must be more than 7 chars"
-            private const val TOO_SIMPLE =
-                "Password must contains at least one number, one alphabetical uppercase char, and one special char"
-        }
+    sealed class InvalidPassword(override val message: String) : IllegalArgumentException(message) {
+        object TooShort : InvalidPassword(message = "Password must be more than 7 chars")
+        object TooSimple :
+            InvalidPassword(message = "Password must contains at least one number, one alphabetical uppercase char, and one special char")
 
-        object TooShort : InvalidPassword(TOO_SHORT)
-        object TooSimple : InvalidPassword(TOO_SIMPLE)
-
-        override fun toString() = msg
+        override fun toString() = message
     }
 
     companion object {
@@ -48,6 +43,5 @@ sealed class Password private constructor() {
                 else -> Either.Right(PlainPassword(s))
             }
         }
-
     }
 }

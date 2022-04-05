@@ -35,7 +35,7 @@ sealed class CreateElementWithParentData {
     ) : CreateElementWithParentData()
 }
 
-sealed class CreateElementWithParentError(val msg: String) {
+sealed class CreateElementWithParentError(override val message: String) : Exception(message) {
     object ElementNotFound : CreateElementWithParentError("Element was not found")
     object ReadError : CreateElementWithParentError("Element was not read due to an error")
     object InvalidParentElement : CreateElementWithParentError("Element parent must be a collection")

@@ -7,11 +7,11 @@ import com.ketabs.model.Element
 import com.ketabs.model.valueobject.ID
 import java.util.concurrent.ConcurrentHashMap
 
-sealed class ElementRepoWriteError(val msg: String) {
+sealed class ElementRepoWriteError(val message: String) {
     object InvalidWriteElement : ElementRepoWriteError("Element was not written due to an error")
 }
 
-sealed class ElementRepoReadError(val msg: String) {
+sealed class ElementRepoReadError(val message: String) {
     object ElementNotFound : ElementRepoReadError("Element was not found")
     object InvalidReadElement : ElementRepoReadError("Element was not read due to an error")
 }

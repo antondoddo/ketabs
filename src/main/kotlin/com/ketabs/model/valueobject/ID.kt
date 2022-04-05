@@ -5,14 +5,10 @@ import java.util.UUID
 
 @JvmInline
 value class ID private constructor(val value: String) {
-    sealed class InvalidID(private val msg: String) : IllegalArgumentException(msg) {
-        companion object {
-            private const val INVALID_FORMAT = "ID must be a UUID"
-        }
+    sealed class InvalidID(override val message: String) : IllegalArgumentException(message) {
+        object InvalidFormat : InvalidID(message = "ID must be a UUID")
 
-        object InvalidFormat : InvalidID(INVALID_FORMAT)
-
-        override fun toString() = msg
+        override fun toString() = message
     }
 
     companion object {

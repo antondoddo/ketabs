@@ -10,7 +10,7 @@ data class FindElementData(val id: ID)
 
 typealias FindElement = suspend (FindElementData) -> Either<FindElementError, Element>
 
-sealed class FindElementError(val msg: String) {
+sealed class FindElementError(override val message: String) : Exception(message) {
     object ElementNotFound : FindElementError("Element was not found")
     object ReadError : FindElementError("Element was not read due to an error")
 }

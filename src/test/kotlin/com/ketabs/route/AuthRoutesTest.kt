@@ -15,17 +15,17 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.testing.handleRequest
 import io.ktor.server.testing.setBody
 import io.ktor.server.testing.withTestApplication
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
+import org.junit.jupiter.api.DynamicTest
+import org.junit.jupiter.api.TestFactory
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlinx.serialization.decodeFromString
-import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
-import org.junit.jupiter.api.DynamicTest
-import org.junit.jupiter.api.TestFactory
 
 internal class AuthRoutesTest {
 
@@ -35,19 +35,21 @@ internal class AuthRoutesTest {
         val userRepo = InMemoryUserRepository()
 
         withTestApplication(testApp(userRepo = userRepo)) {
-            with(handleRequest(HttpMethod.Post, "/auth/register") {
-                setBody(
-                    Json.encodeToString(
-                        mapOf(
-                            "email" to user.email.value,
-                            "password" to plainPassword.value,
-                            "full_name" to user.fullName.value,
+            with(
+                handleRequest(HttpMethod.Post, "/auth/register") {
+                    setBody(
+                        Json.encodeToString(
+                            mapOf(
+                                "email" to user.email.value,
+                                "password" to plainPassword.value,
+                                "full_name" to user.fullName.value
+                            )
                         )
                     )
-                )
-                addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-            }) {
-                val resData = Json.decodeFromString<Map<String, String>>(response.content ?: "")
+                    addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                }
+            ) {
+                val resData = Json.decodeFromString<Map<String, String>>(response.content ?: "{}")
                 assertEquals(HttpStatusCode.Created, response.status())
                 assertEquals(user.email.value, resData["email"])
                 assertEquals(user.fullName.value, resData["full_name"])
@@ -70,18 +72,20 @@ internal class AuthRoutesTest {
         val userRepo = InMemoryUserRepository.withStore(store)
 
         withTestApplication(testApp(userRepo = userRepo)) {
-            with(handleRequest(HttpMethod.Post, "/auth/login") {
-                setBody(
-                    Json.encodeToString(
-                        mapOf(
-                            "email" to user.email.value,
-                            "password" to plainPassword.value,
+            with(
+                handleRequest(HttpMethod.Post, "/auth/login") {
+                    setBody(
+                        Json.encodeToString(
+                            mapOf(
+                                "email" to user.email.value,
+                                "password" to plainPassword.value,
+                            )
                         )
                     )
-                )
-                addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-            }) {
-                val resData = Json.decodeFromString<Map<String, String>>(response.content ?: "")
+                    addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                }
+            ) {
+                val resData = Json.decodeFromString<Map<String, String>>(response.content ?: "{}")
                 assertEquals(HttpStatusCode.OK, response.status())
                 assertContains(resData, "token")
                 val decodedToken = JWT.decode(resData["token"])
@@ -105,19 +109,20 @@ internal class AuthRoutesTest {
             Pair(registeredUser.email.value, registeredUserPlainPassword.value + "hello"),
             Pair(unregisteredUser.email.value, unregisteredUserPlainPassword.value),
         ).map { (email, password) ->
-            DynamicTest.dynamicTest("when I try logging in is as `${email}` with password `${password}` then I must be unauthorized") {
+            DynamicTest.dynamicTest("when I try logging in is as `$email` with password `$password` then I must be unauthorized") {
                 withTestApplication(testApp(userRepo = userRepo)) {
-                    with(handleRequest(HttpMethod.Post, "/auth/login") {
-                        setBody(
-                            Json.encodeToString(
-                                mapOf(
-                                    "email" to email,
-                                    "password" to password
+                    with(
+                        handleRequest(HttpMethod.Post, "/auth/login") {
+                            setBody(
+                                Json.encodeToString(
+                                    mapOf(
+                                        "email" to email, "password" to password
+                                    )
                                 )
                             )
-                        )
-                        addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
-                    }) {
+                            addHeader(HttpHeaders.ContentType, ContentType.Application.Json.toString())
+                        }
+                    ) {
                         assertNull(response.content)
                         assertEquals(HttpStatusCode.Unauthorized, response.status())
                     }

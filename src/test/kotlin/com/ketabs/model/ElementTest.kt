@@ -1,13 +1,12 @@
 package com.ketabs.model
 
 import com.ketabs.ObjectMother
-import com.ketabs.model.valueobject.ID
 import com.ketabs.model.valueobject.Role
-import kotlin.test.assertEquals
-import kotlin.test.assertNotEquals
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
+import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 
 internal class ElementTest {
 

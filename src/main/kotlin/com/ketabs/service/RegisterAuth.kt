@@ -15,7 +15,7 @@ data class RegisterAuthData(val email: Email, val fullName: FullName, val passwo
 
 typealias RegisterAuth = suspend (RegisterAuthData) -> Either<RegisterAuthError, User>
 
-sealed class RegisterAuthError(val msg: String) {
+sealed class RegisterAuthError(override val message: String) : Exception(message) {
     object WriteError : RegisterAuthError("User was not written due to an error")
 }
 

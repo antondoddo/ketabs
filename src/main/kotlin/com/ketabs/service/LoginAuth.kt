@@ -11,7 +11,7 @@ data class LoginAuthData(val email: Email, val plainPassword: Password.PlainPass
 
 typealias LoginAuth = suspend (LoginAuthData) -> Either<LoginAuthError, User>
 
-sealed class LoginAuthError(val msg: String) {
+sealed class LoginAuthError(override val message: String) : Exception(message) {
     object UserNotFound : LoginAuthError("User was not authorized")
     object ReadError : LoginAuthError("User was not read due to an error")
 }

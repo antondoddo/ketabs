@@ -6,8 +6,8 @@ import com.ketabs.service.LoginAuthData
 
 @kotlinx.serialization.Serializable
 data class LoginAuthRequest(
-    val email: String =  "",
-    @kotlinx.serialization.SerialName("password") val plainPassword: String =  "",
+    val email: String = "",
+    @kotlinx.serialization.SerialName("password") val plainPassword: String = "",
 ) {
     fun parse() = parse(
         "email" to Email.of(email),

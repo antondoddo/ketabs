@@ -4,14 +4,10 @@ import arrow.core.Either
 
 @JvmInline
 value class Link private constructor(val value: String) {
-    sealed class InvalidLink(private val msg: String) : IllegalArgumentException(msg) {
-        companion object {
-            private const val INVALID_FORMAT = "Link must be a valid URL"
-        }
+    sealed class InvalidLink(override val message: String) : IllegalArgumentException(message) {
+        object InvalidFormat : InvalidLink(message = "Link must be a valid URL")
 
-        object InvalidFormat : InvalidLink(INVALID_FORMAT)
-
-        override fun toString() = msg
+        override fun toString() = message
     }
 
     companion object {

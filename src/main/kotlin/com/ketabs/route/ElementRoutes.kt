@@ -21,9 +21,9 @@ import io.ktor.response.respond
 import io.ktor.routing.Route
 import io.ktor.routing.get
 import io.ktor.routing.post
+import kotlinx.serialization.SerializationException
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import kotlinx.serialization.SerializationException
 
 fun Route.elements(
     findElement: FindElement,
@@ -108,7 +108,7 @@ fun Route.elements(
                 is CreateElementWithParentError.ReadError -> return@post call.respond(HttpStatusCode.InternalServerError)
                 is CreateElementWithParentError.ElementNotFound -> return@post call.respond(HttpStatusCode.NotFound)
                 is CreateElementWithParentError.InvalidParentElement -> return@post call.respond(
-                    HttpStatusCode.UnprocessableEntity, mapOf("id" to it.msg)
+                    HttpStatusCode.UnprocessableEntity, mapOf("id" to it.message)
                 )
             }
         }

@@ -22,7 +22,7 @@ sealed class Element private constructor() {
         override val id: ID,
         override val name: Name,
         override val description: Description,
-        val link: Link?,
+        val link: Link,
         override val owners: List<Owner>,
         override val parent: Collection?,
         override val createdAt: LocalDateTime,

@@ -4,7 +4,6 @@ import com.ketabs.model.valueobject.Description
 import com.ketabs.model.valueobject.ID
 import com.ketabs.model.valueobject.Link
 import com.ketabs.model.valueobject.Name
-import com.ketabs.service.CreateElementData
 import com.ketabs.service.CreateElementWithParentData
 
 @kotlinx.serialization.Serializable
@@ -17,10 +16,10 @@ data class CreateElementWithParentRequest(
     fun parse(userID: ID) = when {
         !link.isNullOrBlank() ->
             parse(
-                "name" to  Name.of(name),
-                "description" to  Description.of(description),
-                "link" to  Link.of(link),
-                "id" to  ID.of(parentID),
+                "name" to Name.of(name),
+                "description" to Description.of(description),
+                "link" to Link.of(link),
+                "id" to ID.of(parentID),
             ) { name, description, link, parentID ->
                 CreateElementWithParentData.CreateTabData(
                     name,
@@ -32,9 +31,9 @@ data class CreateElementWithParentRequest(
             }
         else ->
             parse(
-                "name" to  Name.of(name),
-                "description" to  Description.of(description),
-                "id" to  ID.of(parentID),
+                "name" to Name.of(name),
+                "description" to Description.of(description),
+                "id" to ID.of(parentID),
             ) { name, description, parentID ->
                 CreateElementWithParentData.CreateCollectionData(
                     name,

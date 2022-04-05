@@ -4,14 +4,10 @@ import arrow.core.Either
 
 @JvmInline
 value class Description private constructor(val value: String) {
-    sealed class InvalidDescription(private val msg: String) : IllegalArgumentException(msg) {
-        companion object {
-            private const val TOO_LONG = "Description must not be longer than 200 chars"
-        }
+    sealed class InvalidDescription(override val message: String) : IllegalArgumentException(message) {
+        object TooLong : InvalidDescription(message = "Description must not be longer than 200 chars")
 
-        object TooLong : InvalidDescription(TOO_LONG)
-
-        override fun toString() = msg
+        override fun toString() = message
     }
 
     companion object {

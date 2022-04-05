@@ -8,12 +8,11 @@ import com.ketabs.model.valueobject.Email
 import com.ketabs.model.valueobject.ID
 import java.util.concurrent.ConcurrentHashMap
 
-
-sealed class UserRepoWriteError(val msg: String) {
+sealed class UserRepoWriteError(val message: String) {
     object InvalidWriteUser : UserRepoWriteError("User was not written due to an error")
 }
 
-sealed class UserRepoReadError(val msg: String) : Exception() {
+sealed class UserRepoReadError(override val message: String) : Exception(message) {
     object UserNotFound : UserRepoReadError("User was not found")
     object InvalidReadUser : UserRepoReadError("User was not read due to an error")
 }
@@ -21,10 +20,10 @@ sealed class UserRepoReadError(val msg: String) : Exception() {
 interface UserRepository {
     suspend fun getByID(id: ID): Either<UserRepoReadError, User>
     suspend fun getByEmail(email: Email): Either<UserRepoReadError, User>
-    suspend fun add(add: User): Option<UserRepoWriteError>
+    suspend fun add(user: User): Option<UserRepoWriteError>
 }
 
-class InMemoryUserRepository() : UserRepository {
+class InMemoryUserRepository : UserRepository {
     private var store = ConcurrentHashMap<ID, User>()
 
     companion object {

@@ -31,7 +31,7 @@ sealed class CreateElementData {
 
 typealias CreateElement = suspend (CreateElementData) -> Either<CreateElementError, Element>
 
-sealed class CreateElementError(val msg: String) {
+sealed class CreateElementError(override val message: String) : Exception(message) {
     object WriteError : CreateElementError("Element was not written due to an error")
 }
 

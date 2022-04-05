@@ -1,6 +1,8 @@
 package com.ketabs
 
 import arrow.core.computations.ResultEffect.bind
+import com.auth0.jwt.JWT
+import com.auth0.jwt.algorithms.Algorithm
 import com.ketabs.model.Element
 import com.ketabs.model.User
 import com.ketabs.model.valueobject.Description
@@ -14,6 +16,7 @@ import com.ketabs.model.valueobject.Password
 import com.ketabs.model.valueobject.Role
 import io.github.serpro69.kfaker.faker
 import java.time.LocalDateTime
+import java.util.Date
 
 class ObjectMother {
 
@@ -92,8 +95,22 @@ class ObjectMother {
                     randomEmail(),
                     randomFullName(),
                     passwords.second
-                ), passwords.first
+                ),
+                passwords.first
             )
         }
+
+        fun randomJWT(
+            user: User = ObjectMother.randomUser(),
+            jwtConfig: JWTConfig = JWTConfig("example", "example", "example", "example"),
+        ) =
+            JWT.create()
+                .withAudience(jwtConfig.audience)
+                .withIssuer(jwtConfig.issuer)
+                .withClaim("id", user.id.value)
+                .withClaim("email", user.email.value)
+                .withClaim("full_name", user.fullName.value)
+                .withExpiresAt(Date(System.currentTimeMillis() + 60000))
+                .sign(Algorithm.HMAC256(jwtConfig.secret))
     }
 }

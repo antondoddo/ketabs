@@ -3,10 +3,10 @@ package com.ketabs.model.valueobject
 import arrow.core.computations.ResultEffect.bind
 import io.kotest.assertions.arrow.core.shouldBeLeft
 import io.kotest.assertions.arrow.core.shouldBeRight
-import kotlin.test.assertNotSame
-import kotlin.test.assertSame
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
+import kotlin.test.assertNotSame
+import kotlin.test.assertSame
 
 internal class PasswordTest {
 

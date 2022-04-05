@@ -4,14 +4,10 @@ import arrow.core.Either
 
 @JvmInline
 value class FullName private constructor(val value: String) {
-    sealed class InvalidFullName(private val msg: String) : IllegalArgumentException(msg) {
-        companion object {
-            private const val TOO_SHORT = "Full name must be more than 5 chars"
-        }
+    sealed class InvalidFullName(override val message: String) : IllegalArgumentException(message) {
+        object TooShort : InvalidFullName(message = "Full name must be more than 5 chars")
 
-        object TooShort : InvalidFullName(TOO_SHORT)
-
-        override fun toString() = msg
+        override fun toString() = message
     }
 
     companion object {

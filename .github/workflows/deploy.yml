@@ -1,0 +1,30 @@
+---
+name: Deploy
+  
+on:
+  workflow_run:
+    workflows:
+      - Build
+    types:
+      - completed
+    branches:
+      - 'main'
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+
+    name: Deploy container
+    runs-on: ubuntu-latest
+    steps:
+      - name: TODO
+        run: echo "Todo"
+
+  no_deploy:
+    if: ${{ github.event.workflow_run.conclusion != 'success' }}
+
+    name: Notify error
+    runs-on: ubuntu-latest
+    steps:
+      - name: TODO
+        run: echo "Todo" && exit 1

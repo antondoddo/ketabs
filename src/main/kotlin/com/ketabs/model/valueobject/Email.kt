@@ -4,14 +4,10 @@ import arrow.core.Either
 
 @JvmInline
 value class Email private constructor(val value: String) {
-    sealed class InvalidEmail(private val msg: String) : IllegalArgumentException(msg) {
-        companion object {
-            private const val INVALID_FORMAT = "Email must be a valid email address"
-        }
+    sealed class InvalidEmail(override val message: String) : IllegalArgumentException(message) {
+        object InvalidFormat : InvalidEmail(message = "Email must be a valid email address")
 
-        object InvalidFormat : InvalidEmail(INVALID_FORMAT)
-
-        override fun toString() = msg
+        override fun toString() = message
     }
 
     companion object {
