@@ -1,11 +1,15 @@
 package com.ketabs.route
 
 import arrow.core.Either
+import arrow.core.computations.ResultEffect.bind
+import arrow.core.computations.either
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
 import com.ketabs.model.User
 import com.ketabs.route.request.LoginAuthRequest
 import com.ketabs.route.request.RegisterAuthRequest
+import com.ketabs.route.response.Response
+import com.ketabs.route.response.withResponseHandler
 import com.ketabs.service.LoginAuth
 import com.ketabs.service.LoginAuthError
 import com.ketabs.service.RegisterAuth
@@ -27,57 +31,59 @@ fun Route.auth(
     audience: String,
 ) {
     post("/auth/login") {
-        let {
-            when (val request = Either.catch { call.receive<LoginAuthRequest>() }) {
-                is Either.Right -> request.value
-                is Either.Left -> when (request.value) {
-                    is SerializationException -> return@post call.response.status(HttpStatusCode.BadRequest)
-                    else -> return@post call.response.status(HttpStatusCode.InternalServerError)
+        call.withResponseHandler {
+            either {
+                val req = Either.catch { call.receive<LoginAuthRequest>() }.tapLeft {
+                    when (it) {
+                        is SerializationException -> Response.Failure { a -> a.respond(HttpStatusCode.BadRequest) }
+                        else -> Response.Failure { a -> a.respond(HttpStatusCode.InternalServerError) }
+                    }
+                }.bind()
+
+                val data = req.parse().mapLeft {
+                    Response.Failure { a -> a.respond(HttpStatusCode.UnprocessableEntity, it) }
+                }.bind()
+
+                val result = loginAuth(data).mapLeft {
+                    when (it) {
+                        is LoginAuthError.UserNotFound -> Response.Failure { a -> a.respond(HttpStatusCode.Unauthorized) }
+                        is LoginAuthError.ReadError -> Response.Failure { a -> a.respond(HttpStatusCode.InternalServerError) }
+                    }
+                }.bind()
+
+                Response.Success {
+                    it.respond(
+                        HttpStatusCode.OK,
+                        generateJWT(result, secret, issuer, audience)
+                    )
                 }
-            }
-        }.let {
-            when (val parsed = it.parse()) {
-                is Either.Right -> parsed.value
-                is Either.Left -> return@post call.respond(HttpStatusCode.UnprocessableEntity, parsed.value)
-            }
-        }.let {
-            when (val result = loginAuth(it)) {
-                is Either.Right -> return@post call.respond(
-                    HttpStatusCode.OK,
-                    generateJWT(result.value, secret, issuer, audience)
-                )
-                is Either.Left -> result.value
-            }
-        }.let {
-            when (it) {
-                is LoginAuthError.UserNotFound -> return@post call.respond(HttpStatusCode.Unauthorized)
-                is LoginAuthError.ReadError -> return@post call.respond(HttpStatusCode.InternalServerError)
             }
         }
     }
 
     post("/auth/register") {
-        let {
-            when (val request = Either.catch { call.receive<RegisterAuthRequest>() }) {
-                is Either.Right -> request.value
-                is Either.Left -> when (request.value) {
-                    is SerializationException -> return@post call.response.status(HttpStatusCode.BadRequest)
-                    else -> return@post call.response.status(HttpStatusCode.InternalServerError)
+        call.withResponseHandler {
+            either {
+                val req = Either.catch { call.receive<RegisterAuthRequest>() }.tapLeft {
+                    when (it) {
+                        is SerializationException -> Response.Failure { a -> a.respond(HttpStatusCode.BadRequest) }
+                        else -> Response.Failure { a -> a.respond(HttpStatusCode.InternalServerError) }
+                    }
+                }.bind()
+
+                val data = req.parse().mapLeft {
+                    Response.Failure { a -> a.respond(HttpStatusCode.UnprocessableEntity, it) }
+                }.bind()
+
+                val result = registerAuth(data).mapLeft {
+                    when (it) {
+                        is RegisterAuthError.WriteError -> Response.Failure { a -> a.respond(HttpStatusCode.Unauthorized) }
+                    }
+                }.bind()
+
+                Response.Success {
+                    it.respond(HttpStatusCode.Created, result.toResponse())
                 }
-            }
-        }.let {
-            when (val parsed = it.parse()) {
-                is Either.Right -> parsed.value
-                is Either.Left -> return@post call.respond(HttpStatusCode.UnprocessableEntity, parsed.value)
-            }
-        }.let {
-            when (val result = registerAuth(it)) {
-                is Either.Right -> return@post call.respond(HttpStatusCode.Created, result.value.toResponse())
-                is Either.Left -> result.value
-            }
-        }.let {
-            when (it) {
-                is RegisterAuthError.WriteError -> return@post call.respond(HttpStatusCode.InternalServerError)
             }
         }
     }

@@ -1,9 +1,7 @@
 package com.ketabs.service
 
 import arrow.core.Either
-import arrow.core.None
 import arrow.core.Option
-import arrow.core.Some
 import com.ketabs.model.Element
 import com.ketabs.model.valueobject.Description
 import com.ketabs.model.valueobject.ID
@@ -47,10 +45,14 @@ typealias CreateElementWithParent = suspend (CreateElementWithParentData) -> Eit
 
 fun makeCreateElementWithParent(repo: ElementRepository): CreateElementWithParent {
     val errorHandler = { option: Option<ElementRepoWriteError>, element: Element ->
-        when (option) {
-            is None -> Either.Right(element)
-            is Some -> Either.Left(CreateElementWithParentError.WriteError)
-        }
+        option
+            .toEither { element }
+            .swap()
+            .mapLeft {
+                when (it) {
+                    is ElementRepoWriteError.InvalidWriteElement -> CreateElementWithParentError.WriteError
+                }
+            }
     }
 
     return { data: CreateElementWithParentData ->

@@ -1,11 +1,15 @@
 package com.ketabs.route
 
 import arrow.core.Either
+import arrow.core.computations.ResultEffect.bind
+import arrow.core.computations.either
 import com.ketabs.model.Element
 import com.ketabs.model.valueobject.ID
 import com.ketabs.route.request.CreateElementRequest
 import com.ketabs.route.request.CreateElementWithParentRequest
 import com.ketabs.route.request.FindElementRequest
+import com.ketabs.route.response.Response
+import com.ketabs.route.response.withResponseHandler
 import com.ketabs.service.CreateElement
 import com.ketabs.service.CreateElementError
 import com.ketabs.service.CreateElementWithParent
@@ -31,109 +35,95 @@ fun Route.elements(
     createElementWithParent: CreateElementWithParent,
 ) {
     post("/elements") {
-        let {
-            when (val request = Either.catch { call.receive<CreateElementRequest>() }) {
-                is Either.Right -> request.value
-                is Either.Left -> when (request.value) {
-                    is SerializationException -> return@post call.response.status(HttpStatusCode.BadRequest)
-                    else -> return@post call.response.status(HttpStatusCode.InternalServerError)
-                }
-            }
-        }.let {
-            val principal = call.principal<JWTPrincipal>()
-            when (val userID = ID.of(principal?.payload?.getClaim("id")?.asString() ?: "")) {
-                is Either.Left -> return@post call.response.status(HttpStatusCode.Unauthorized)
-                is Either.Right -> Pair(it, userID.value)
-            }
-        }.let {
-            when (val parsed = it.first.parse(it.second)) {
-                is Either.Right -> parsed.value
-                is Either.Left -> return@post call.respond(
-                    HttpStatusCode.UnprocessableEntity,
-                    parsed.value.toResponse()
-                )
-            }
-        }.let {
-            when (val result = createElement(it)) {
-                is Either.Right -> return@post call.respond(HttpStatusCode.Created, result.value.toResponse())
-                is Either.Left -> result.value
-            }
-        }.let {
-            when (it) {
-                is CreateElementError.WriteError -> return@post call.respond(HttpStatusCode.InternalServerError)
+        call.withResponseHandler {
+            either {
+                val req = Either.catch { call.receive<CreateElementRequest>() }.tapLeft {
+                    when (it) {
+                        is SerializationException -> Response.Failure { a -> a.respond(HttpStatusCode.BadRequest) }
+                        else -> Response.Failure { a -> a.respond(HttpStatusCode.InternalServerError) }
+                    }
+                }.bind()
+
+                val id = ID.of(call.principal<JWTPrincipal>()?.payload?.getClaim("id")?.asString() ?: "").mapLeft {
+                    Response.Failure { a -> a.respond(HttpStatusCode.Unauthorized) }
+                }.bind()
+
+                val data = req.parse(id).mapLeft {
+                    Response.Failure { a -> a.respond(HttpStatusCode.UnprocessableEntity, it.toResponse()) }
+                }.bind()
+
+                val result = createElement(data).mapLeft {
+                    when (it) {
+                        is CreateElementError.WriteError -> Response.Failure { a -> a.respond(HttpStatusCode.InternalServerError) }
+                    }
+                }.bind()
+
+                Response.Success { it.respond(HttpStatusCode.Created, result.toResponse()) }
             }
         }
     }
 
     post("/elements/{id}") {
-        let {
-            when (val request = Either.catch { call.receive<CreateElementWithParentRequest>() }) {
-                is Either.Right -> request.value
-                is Either.Left -> when (request.value) {
-                    is SerializationException -> return@post call.response.status(HttpStatusCode.BadRequest)
-                    else -> return@post call.response.status(HttpStatusCode.InternalServerError)
-                }
-            }
-        }.let {
-            when (val id = call.parameters["id"]) {
-                is String -> {
-                    it.parentID = id
-                    it
-                }
-                else -> return@post call.respond(HttpStatusCode.NotFound)
-            }
-        }.let {
-            val principal = call.principal<JWTPrincipal>()
-            when (val userID = ID.of(principal?.payload?.getClaim("id")?.asString() ?: "")) {
-                is Either.Left -> return@post call.response.status(HttpStatusCode.Unauthorized)
-                is Either.Right -> Pair(it, userID.value)
-            }
-        }.let {
-            when (val parsed = it.first.parse(it.second)) {
-                is Either.Right -> parsed.value
-                is Either.Left -> when (parsed.value.containsKey("id")) {
-                    false -> return@post call.respond(HttpStatusCode.UnprocessableEntity, parsed.value.toResponse())
-                    true -> return@post call.respond(HttpStatusCode.NotFound)
-                }
-            }
-        }.let {
-            when (val result = createElementWithParent(it)) {
-                is Either.Right -> return@post call.respond(HttpStatusCode.Created, result.value.toResponse())
-                is Either.Left -> result.value
-            }
-        }.let {
-            when (it) {
-                is CreateElementWithParentError.InvalidOwner -> return@post call.respond(HttpStatusCode.Unauthorized)
-                is CreateElementWithParentError.WriteError -> return@post call.respond(HttpStatusCode.InternalServerError)
-                is CreateElementWithParentError.ReadError -> return@post call.respond(HttpStatusCode.InternalServerError)
-                is CreateElementWithParentError.ElementNotFound -> return@post call.respond(HttpStatusCode.NotFound)
-                is CreateElementWithParentError.InvalidParentElement -> return@post call.respond(
-                    HttpStatusCode.UnprocessableEntity, mapOf("id" to it.message)
-                )
+        call.withResponseHandler {
+            either {
+                val req = Either.catch { call.receive<CreateElementWithParentRequest>() }.tapLeft {
+                    when (it) {
+                        is SerializationException -> Response.Failure { a -> a.respond(HttpStatusCode.BadRequest) }
+                        else -> Response.Failure { a -> a.respond(HttpStatusCode.InternalServerError) }
+                    }
+                }.bind()
+
+                req.parentID = Either.catch { call.parameters["id"]!! }.tapLeft {
+                    Response.Failure { a -> a.respond(HttpStatusCode.NotFound) }
+                }.bind()
+
+                val id = ID.of(call.principal<JWTPrincipal>()?.payload?.getClaim("id")?.asString() ?: "").mapLeft {
+                    Response.Failure { a -> a.respond(HttpStatusCode.Unauthorized) }
+                }.bind()
+
+                val data = req.parse(id).mapLeft {
+                    Response.Failure { call -> call.respond(HttpStatusCode.UnprocessableEntity, it.toResponse()) }
+                }.bind()
+
+                val result = createElementWithParent(data).mapLeft {
+                    when (it) {
+                        is CreateElementWithParentError.InvalidOwner -> Response.Failure { a -> a.respond(HttpStatusCode.Unauthorized) }
+                        is CreateElementWithParentError.WriteError -> Response.Failure { a -> a.respond(HttpStatusCode.InternalServerError) }
+                        is CreateElementWithParentError.ReadError -> Response.Failure { a -> a.respond(HttpStatusCode.InternalServerError) }
+                        is CreateElementWithParentError.ElementNotFound -> Response.Failure { a -> a.respond(HttpStatusCode.NotFound) }
+                        is CreateElementWithParentError.InvalidParentElement -> Response.Failure { a ->
+                            a.respond(
+                                HttpStatusCode.UnprocessableEntity,
+                                mapOf("id" to it.message),
+                            )
+                        }
+                    }
+                }.bind()
+
+                Response.Success { it.respond(HttpStatusCode.Created, result.toResponse()) }
             }
         }
     }
 
     get("/elements/{id}") {
-        let {
-            when (val id = call.parameters["id"]) {
-                is String -> id
-                else -> return@get call.respond(HttpStatusCode.NotFound)
-            }
-        }.let {
-            when (val parsed = FindElementRequest(it).parse()) {
-                is Either.Right -> parsed.value
-                is Either.Left -> return@get call.respond(HttpStatusCode.NotFound)
-            }
-        }.let {
-            when (val result = findElement(it)) {
-                is Either.Right -> return@get call.respond(HttpStatusCode.OK, result.value.toResponse())
-                is Either.Left -> result.value
-            }
-        }.let {
-            when (it) {
-                is FindElementError.ElementNotFound -> return@get call.respond(HttpStatusCode.NotFound)
-                is FindElementError.ReadError -> return@get call.respond(HttpStatusCode.InternalServerError)
+        call.withResponseHandler {
+            either {
+                val id = Either.catch { call.parameters["id"]!! }.tapLeft {
+                    Response.Failure { a -> a.respond(HttpStatusCode.NotFound) }
+                }.bind()
+
+                val data = FindElementRequest(id).parse().mapLeft {
+                    Response.Failure { call -> call.respond(HttpStatusCode.NotFound, it.toResponse()) }
+                }.bind()
+
+                val result = findElement(data).mapLeft {
+                    when (it) {
+                        is FindElementError.ElementNotFound -> Response.Failure { a -> a.respond(HttpStatusCode.NotFound) }
+                        is FindElementError.ReadError -> Response.Failure { a -> a.respond(HttpStatusCode.InternalServerError) }
+                    }
+                }.bind()
+
+                Response.Success { it.respond(HttpStatusCode.OK, result.toResponse()) }
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.ketabs.service
 
 import arrow.core.Either
+import arrow.core.ensure
 import com.ketabs.model.User
 import com.ketabs.model.valueobject.Email
 import com.ketabs.model.valueobject.Password
@@ -18,19 +19,15 @@ sealed class LoginAuthError(override val message: String) : Exception(message) {
 
 fun makeLoginAuth(repo: UserRepository): LoginAuth {
     return { data: LoginAuthData ->
-        repo.getByEmail(data.email).let {
-            when (it) {
-                is Either.Right -> when (it.value.password.matches(data.plainPassword)) {
-                    true -> return@let Either.Right(it.value)
-                    false -> return@let Either.Left(LoginAuthError.UserNotFound)
-                }
-                is Either.Left -> it.value
-            }.let {
+        repo.getByEmail(data.email)
+            .mapLeft {
                 when (it) {
-                    is UserRepoReadError.InvalidReadUser -> Either.Left(LoginAuthError.ReadError)
-                    is UserRepoReadError.UserNotFound -> Either.Left(LoginAuthError.UserNotFound)
+                    is UserRepoReadError.InvalidReadUser -> LoginAuthError.ReadError
+                    is UserRepoReadError.UserNotFound -> LoginAuthError.UserNotFound
                 }
-            }
-        }
+            }.ensure(
+                predicate = { it.password.matches(data.plainPassword) },
+                error = { LoginAuthError.UserNotFound },
+            )
     }
 }

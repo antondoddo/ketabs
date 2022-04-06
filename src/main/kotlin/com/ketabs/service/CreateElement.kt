@@ -37,13 +37,16 @@ sealed class CreateElementError(override val message: String) : Exception(messag
 
 fun makeCreateElement(repo: ElementRepository): CreateElement {
     val errorHandler = { option: Option<ElementRepoWriteError>, element: Element ->
-        when (val either = option.toEither { element }.swap()) {
-            is Either.Right -> Either.Right(either.value)
-            is Either.Left -> when (either.value) {
-                is ElementRepoWriteError.InvalidWriteElement -> Either.Left(CreateElementError.WriteError)
+        option
+            .toEither { element }
+            .swap()
+            .mapLeft {
+                when (it) {
+                    is ElementRepoWriteError.InvalidWriteElement -> CreateElementError.WriteError
+                }
             }
-        }
     }
+
     return { data: CreateElementData ->
         when (data) {
             is CreateElementData.CreateCollectionData -> {

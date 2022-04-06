@@ -1,9 +1,7 @@
 package com.ketabs.service
 
 import arrow.core.Either
-import arrow.core.None
 import arrow.core.Option
-import arrow.core.Some
 import com.ketabs.model.User
 import com.ketabs.model.valueobject.Email
 import com.ketabs.model.valueobject.FullName
@@ -21,13 +19,16 @@ sealed class RegisterAuthError(override val message: String) : Exception(message
 
 fun makeRegisterAuth(repo: UserRepository): RegisterAuth {
     val errorHandler = { option: Option<UserRepoWriteError>, user: User ->
-        when (option) {
-            is None -> Either.Right(user)
-            is Some -> when (option.value) {
-                is UserRepoWriteError.InvalidWriteUser -> Either.Left(RegisterAuthError.WriteError)
+        option
+            .toEither { user }
+            .swap()
+            .mapLeft {
+                when (it) {
+                    is UserRepoWriteError.InvalidWriteUser -> RegisterAuthError.WriteError
+                }
             }
-        }
     }
+
     return { data: RegisterAuthData ->
         val user = User.create(data.email, data.fullName, data.password)
         errorHandler(repo.add(user), user)

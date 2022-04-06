@@ -18,15 +18,10 @@ sealed class FindElementError(override val message: String) : Exception(message)
 fun makeFindElement(repo: ElementRepository): FindElement {
     return { data: FindElementData ->
         repo.getByID(data.id)
-            .let {
+            .mapLeft {
                 when (it) {
-                    is Either.Right -> return@let Either.Right(it.value)
-                    is Either.Left -> it.value
-                }.let {
-                    when (it) {
-                        is ElementRepoReadError.InvalidReadElement -> Either.Left(FindElementError.ReadError)
-                        is ElementRepoReadError.ElementNotFound -> Either.Left(FindElementError.ElementNotFound)
-                    }
+                    is ElementRepoReadError.InvalidReadElement -> FindElementError.ReadError
+                    is ElementRepoReadError.ElementNotFound -> FindElementError.ElementNotFound
                 }
             }
     }
