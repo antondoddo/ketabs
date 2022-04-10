@@ -6,7 +6,7 @@ import arrow.core.computations.ResultEffect.bind
 typealias ValidationErrors = Map<String, String>
 typealias KeyValueValidationEither<A> = Pair<String, Either<IllegalArgumentException, A>>
 
-fun <A, R> parse(
+internal fun <A, R> parse(
     a: KeyValueValidationEither<A>,
     f: (A) -> R
 ): Either<ValidationErrors, R> = when {
@@ -14,7 +14,7 @@ fun <A, R> parse(
     else -> Either.Right(f(a.second.bind()))
 }
 
-fun <A, B, R> parse(
+internal fun <A, B, R> parse(
     a: KeyValueValidationEither<A>,
     b: KeyValueValidationEither<B>,
     f: (A, B) -> R
@@ -23,7 +23,7 @@ fun <A, B, R> parse(
     else -> Either.Right(f(a.second.bind(), b.second.bind()))
 }
 
-fun <A, B, C, R> parse(
+internal fun <A, B, C, R> parse(
     a: KeyValueValidationEither<A>,
     b: KeyValueValidationEither<B>,
     c: KeyValueValidationEither<C>,
@@ -33,7 +33,7 @@ fun <A, B, C, R> parse(
     else -> Either.Right(f(a.second.bind(), b.second.bind(), c.second.bind()))
 }
 
-fun <A, B, C, D, R> parse(
+internal fun <A, B, C, D, R> parse(
     a: KeyValueValidationEither<A>,
     b: KeyValueValidationEither<B>,
     c: KeyValueValidationEither<C>,

@@ -11,5 +11,5 @@ sealed class Response {
 }
 
 suspend inline fun ApplicationCall.withResponseHandler(action: () -> Either<Response.Failure, Response.Success>) {
-    action.invoke().tapLeft { it.action(this) }.tap { it.action(this) }
+    action().tapLeft { it.action(this) }.tap { it.action(this) }
 }
